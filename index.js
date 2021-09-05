@@ -31,6 +31,9 @@ const moment = require("moment-timezone");
 const { jadibot, stopjadibot, listjadibot } = require('./lib/jadibot');
 const { yta, ytv, igdl, upload, formatDate } = require('./lib/ytdl');
 
+//JSON data
+const welcomeText = JSON.parse(fs.readFileSync("./database/sambutan.json"));
+
 //data
 owner = ["6282334297175@s.whatsapp.net"];
 mns = "```";
@@ -91,6 +94,72 @@ if (time2 < "05:00:00") {
   var ucapanWaktu = "Selamat malam";
 }
 
+const getWelcomeText = (id) => {
+  let position = false;
+  Object.keys(welcomeText).forEach((i) => {
+    if (welcomeText[i].groupId === id) {
+      position = i;
+    }
+  });
+  if (position !== false) {
+    return welcomeText[position].join;
+  } else {
+    return position;
+  }
+};
+
+const updateWelcome = (id, value) => {
+  let status = false;
+  Object.keys(welcomeText).forEach((i) => {
+    if (welcomeText[i].groupId === id) {
+      welcomeText[i].join = value;
+      fs.writeFileSync('./database/sambutan.json', JSON.stringify(welcomeText));
+      status = true;
+    }
+  });
+  if (status) {
+    return status;
+  } else {
+    let obj = { groupId: id, join: value, out:"" };
+    welcomeText.push(obj);
+    fs.writeFileSync('./database/sambutan.json', JSON.stringify(welcomeText));
+    return true;
+  }
+};
+
+const getLeaveText = (id) => {
+  let position = false;
+  Object.keys(welcomeText).forEach((i) => {
+    if (welcomeText[i].groupId === id) {
+      position = i;
+    }
+  });
+  if (position !== false) {
+    return welcomeText[position].out;
+  } else {
+    return position;
+  }
+};
+
+const updateLeave = (id, value) => {
+  let status = false;
+  Object.keys(welcomeText).forEach((i) => {
+    if (welcomeText[i].groupId === id) {
+      welcomeText[i].out = value;
+      fs.writeFileSync('./database/sambutan.json', JSON.stringify(welcomeText));
+      status = true;
+    }
+  });
+  if (status) {
+    return status;
+  } else {
+    let obj = { groupId: id, join: "", out: value};
+    welcomeText.push(obj);
+    fs.writeFileSync('./database/sambutan.json', JSON.stringify(welcomeText));
+    return true;
+  }
+};
+
 
 module.exports = (client) => {
   client.on("group-update", async(mem) => {
@@ -117,24 +186,32 @@ module.exports = (client) => {
   });
   client.on("group-participants-update", async(mem) => {
     try {
-      groupMetadata =await client.groupMetadata(mem.jid);
+      groupMetadata = await client.groupMetadata(mem.jid);
       groupMembers = groupMetadata.participants;
       groupAdmins = getGroupAdmins(groupMembers);
       anu = mem.participants[0];
-      ppmem = await client.getProfilePicture(anu);
       try {
         pp_user = await client.getProfilePicture(anu);
+        ppmem = await client.getProfilePicture(anu);
       } catch (e) {
-        pp_user =
-          "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png?q=60";
+        pp_user = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png?q=60";
+        ppmem = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png?q=60";
       }
       if (mem.action == "add" ) {
         buff = await getBuffer(ppmem);
-        text = `${ucapanWaktu} @${anu.split("@")[0]}\nselamat datang di group ${groupMetadata.subject}\n\n*info group*\nmember: ${groupMembers.length}/256\ndeskripsi: ${groupMetadata.desc}\n\n`;
+        if (getWelcomeText(groupMetadata.id) === false || getWelcomeText(groupMetadata.id) === "") {
+          text = `${ucapanWaktu} @${anu.split("@")[0]}\nselamat datang di group ${groupMetadata.subject}\n\n*info group*\nmember: ${groupMembers.length}/256\ndeskripsi: ${groupMetadata.desc}\n\n`;
+        } else {
+          text = `${getWelcomeText(groupMetadata.id)}`
+        }
         client.sendMessage(groupMetadata.id, buff, MessageType.image, { caption: text, contextInfo: { mentionedJid: [anu.split("@")[0] + "@s.whatsapp.net"]}});
       } else if (mem.action == "remove" ) {
         buff = await getBuffer(ppmem);
-        text = `sampai jumpa @${anu.split("@")[0]}\nsemoga tenang di alam sana ya kak:)`;
+        if (getLeaveText(groupMetadata.id) === false || getLeaveText(groupMetadata.id) === "") {
+          text = `sampai jumpa @${anu.split("@")[0]}\nsemoga tenang di alam sana ya kak:)`;
+        } else {
+          text = `${getLeaveText(groupMetadata.id)}`
+        }
         client.sendMessage(groupMetadata.id, buff, MessageType.image, { caption: text, contextInfo: { mentionedJid: [anu.split("@")[0] + "@s.whatsapp.net"]}});
       } else if (mem.action == "promote") {
         client.sendMessage(groupMetadata.id, `@${anu.split("@")[0]} telah di promote`, MessageType.text, { contextInfo: {mentionedJid: [anu.split("@")[0]+ "@s.whatsapp.net"]}});
@@ -402,6 +479,8 @@ ${readMore}
 *❏ Group*
 ├ *${prefix}join* _<link group>_
 ├ *${prefix}linkgc*
+├ *${prefix}setwelcome _<new welcome>_
+├ *${prefix}setleave _<new leave>_
 └ *${prefix}leave*
 
 *❏ Owner*
@@ -470,7 +549,7 @@ ${readMore}
         case 'menu':
           var menulist = client.prepareMessageFromContent(from, {
             "listMessage" :{
-              "title": `${ucapanWaktu} kak ${pushname}\n\nini adalah bot ${client.user.name}\nbot ini bisa di buat menggunakan termux. untuk script nya bisa di download di github owner\ndan untuk fitur fitur nya bisa kalian add sendiri:)\n\nThanks for suports\nortu\nfadhil\nangga\nbryan\nhanz\nadiwajshing\ntermos bot maker\nmhankbarbar`,
+              "title": `${ucapanWaktu} kak ${pushname}\n\nini adalah bot ${client.user.name}\nbot ini bisa di buat menggunakan termux. untuk script nya bisa di download di github owner\ndan untuk fitur fitur nya bisa kalian add sendiri:)\n\nThanks for suports\nortu\nfadhil\nangga\nhanz\nadiwajshing\ntermos bot maker\nmhankbarbar`,
               "description": `bot ini berjalan selama \n${runtime(process.uptime())}`,
               "buttonText": "click here👈",
               "listType": "SINGLE_SELECT",
@@ -894,7 +973,7 @@ ${readMore}
           } else {
             reply('Pilih gunting/batu/kertas')
           }
-          break;
+          break; 
         case 'slot':
           isiSlot = ["🍎","🍐","🍊","🍋","🍌","🍉","🍇","🍓","🫐","🍈","🍒","🍑","🥭","🍍"];
           slotBoard = ["","","","","","","","",""];
@@ -928,6 +1007,34 @@ ${readMore}
             }
           } else {
             return(`maaf masukan query yang benar\ncontoh: ${prefix}${command} halo|5`)
+          }
+          break;
+        case 'setwelcome':
+          if (args.length < 1) return reply("kasih text nya bambang")
+          var newWelcome = body.slice(12);
+          try {
+            setup = updateWelcome(from, `${newWelcome}`)
+            if (setup) {
+              reply(`*[ WELCOME ]*\nwelcome berhasil di ubah menjadi\n${newWelcome}`)
+            } else {
+              reply("gagal mengubah welcome")
+            }
+          } catch (e) {
+            reply(e)
+          }
+          break;
+        case 'setleave':
+          if (args.length < 1) return reply("kasih text nya bambang")
+          var newWelcome = body.slice(10);
+          try {
+            setup = updateLeave(from, `${newWelcome}`)
+            if (setup) {
+              reply(`*[ LEAVE ]*\nLeave berhasil di ubah menjadi\n${newWelcome}`)
+            } else {
+              reply("gagal mengubah Leave")
+            }
+          } catch (e) {
+            reply(e)
           }
           break;
         
@@ -964,7 +1071,7 @@ giliran = @${tty.player1.split('@')[0]}`
             main = roomttt.filter(gang => gang.id.includes(from))
             if (!defttt.includes(main[0].number[noober])) return reply("number sudah di isi, pilih number lain nya")
             if (main[0].turn.includes(sender)) return reply("tunggu giliran mu dulu ya")
-            s = '❌'
+            s = '❎'
             main[0].number[noober] = s
             main[0].turn = main[0].player1
             rooms = roomttt.filter(bang => !bang.id.includes(from))
@@ -1016,7 +1123,7 @@ giliran = @${tty.player1.split('@')[0]}`
             main = roomttt.filter(gang => gang.id.includes(from))
             if (!defttt.includes(main[0].number[noober])) return reply("number sudah di isi, pilih number lain nya")
             if (main[0].turn.includes(sender)) return reply("tunggu giliran mu dulu ya")
-            s = '⭕'
+            s = '🅾️'
             main[0].number[noober] = s
             main[0].turn = main[0].player2
             rooms = roomttt.filter(bang => !bang.id.includes(from))
