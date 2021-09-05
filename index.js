@@ -479,8 +479,8 @@ ${readMore}
 *❏ Group*
 ├ *${prefix}join* _<link group>_
 ├ *${prefix}linkgc*
-├ *${prefix}setwelcome _<new welcome>_
-├ *${prefix}setleave _<new leave>_
+├ *${prefix}setwelcome* _<new welcome>_
+├ *${prefix}setleave* _<new leave>_
 └ *${prefix}leave*
 
 *❏ Owner*
