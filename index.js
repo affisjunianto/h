@@ -1077,7 +1077,7 @@ ${readMore}
         case 'warn':
           if (isGroupAdmins) return reply("khusus admin ya bang")
           ment = mek.message.extendedTextMessage.contextInfo.mentionedJid[0];
-          warnAdd(ment)
+          warnAdd(ment, from)
           client.sendMessage(`sukses menambah peringatan ke ${ment.split("@")[0]}\nwarn user in group ${warndat[getWarnPos(ment)]}`,text, {contextInfo:{ mentionedJid: [ment]}})
           break;
         
