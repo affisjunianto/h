@@ -480,9 +480,9 @@ ${readMore}
 ├ *${prefix}join* _<link group>_
 ├ *${prefix}linkgc*
 ├ *${prefix}setwelcome* _<new welcome>_
-├ *${prefix}setleave* _<new leave>_
+├ *${prefix}setgoodbye* _<new leave>_
 ├ *${prefix}welcome*
-├ *${prefix}leave*
+├ *${prefix}goodbye*
 └ *${prefix}leave*
 
 *❏ Owner*
@@ -1026,10 +1026,10 @@ ${readMore}
             reply(e)
           }
           break;
-        case 'setleave':
+        case 'setgoodbye':
           if (!isGroupAdmins) return reply("khusus admin group")
           if (args.length < 1) return reply("kasih text nya bambang")
-          var newWelcome = body.slice(10);
+          var newWelcome = body.slice(12);
           try {
             setup = updateLeave(from, `${newWelcome}`)
             if (setup) {
@@ -1046,7 +1046,7 @@ ${readMore}
           txt = getWelcomeText(from)
           reply(txt)
           break;
-        case 'leave':
+        case 'goodbye':
           if (!isGroup) return reply("khusus group")
           txt = getLeaveText(from)
           reply(txt)
