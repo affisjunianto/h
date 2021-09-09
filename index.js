@@ -33,8 +33,6 @@ const { yta, ytv, igdl, upload, formatDate } = require('./lib/ytdl');
 
 //JSON data
 const welcomeText = JSON.parse(fs.readFileSync("./database/sambutan.json"));
-const warndat = JSON.parse(fs.readFileSync("./database/warn.json"));
-
 //data
 owner = ["6282334297175@s.whatsapp.net"];
 mns = "```";
@@ -160,31 +158,6 @@ const updateLeave = (id, value) => {
     return true;
   }
 };
-
-const warnAdd = (id,gc) => {
-  let position = null;
-  Object.keys(warndat).forEach((i) => {
-    if (warndat[i].id === id) {
-      warndat[i].count += 1
-      position = i
-    } 
-  })
-  if (position === null) {
-    let obj = { id: id, count:0, group: gc}
-    warndat.push(obj)
-    fs.writeFileSync('./database/warn.json', JSON.stringify(warndat));
-  }
-}
-
-const getWarnPos = (id) => {
-  let position = null;
-  Object.keys(warndat).forEach((i) => {
-    if (warndat[i].id === id) {
-      position = i
-    } 
-  })
-  return position
-}
 
 module.exports = (client) => {
   client.on("group-update", async(mem) => {
@@ -362,16 +335,6 @@ module.exports = (client) => {
       const pushname = mek.key.fromMe ? client.user.name : conts.notify || conts.vname || conts.name || '-'
       const more = String.fromCharCode(8206)
       const readMore = more.repeat(4001)
-      if (isGroup) {
-        if (warndat[getWarnPos(sender)].group === from) {
-          if (warndat[getWarnPos(sender)].total > 3) {
-            client.sendMessage(from, `maaf ${pushname} anda telah terkena pelanggaran 3x jadi anda di kick dari group ini`, text)
-            setTimeout(() => {
-              client.groupRemove(from, [warndat[getWarnPos(sender)].id])
-            }, 10);
-          }
-        }
-      }
       if (self) {
         if (!isOwner || !botNumber) return
       }
@@ -516,8 +479,10 @@ ${readMore}
 *❏ Group*
 ├ *${prefix}join* _<link group>_
 ├ *${prefix}linkgc*
-├ *${prefix}setwelcome _<new welcome>_
-├ *${prefix}setleave _<new leave>_
+├ *${prefix}setwelcome* _<new welcome>_
+├ *${prefix}setleave* _<new leave>_
+├ *${prefix}welcome*
+├ *${prefix}leave*
 └ *${prefix}leave*
 
 *❏ Owner*
@@ -1047,6 +1012,7 @@ ${readMore}
           }
           break;
         case 'setwelcome':
+          if (!isGroupAdmins) return reply("khusus admin group")
           if (args.length < 1) return reply("kasih text nya bambang")
           var newWelcome = body.slice(12);
           try {
@@ -1061,6 +1027,7 @@ ${readMore}
           }
           break;
         case 'setleave':
+          if (!isGroupAdmins) return reply("khusus admin group")
           if (args.length < 1) return reply("kasih text nya bambang")
           var newWelcome = body.slice(10);
           try {
@@ -1074,11 +1041,15 @@ ${readMore}
             reply(e)
           }
           break;
-        case 'warn':
-          if (isGroupAdmins) return reply("khusus admin ya bang")
-          ment = mek.message.extendedTextMessage.contextInfo.mentionedJid[0];
-          warnAdd(ment, from)
-          client.sendMessage(`sukses menambah peringatan ke ${ment.split("@")[0]}\nwarn user in group ${warndat[getWarnPos(ment)]}`,text, {contextInfo:{ mentionedJid: [ment]}})
+        case 'welcome':
+          if (!isGroup) return reply("khusus group")
+          txt = getWelcomeText(from)
+          reply(txt)
+          break;
+        case 'leave':
+          if (!isGroup) return reply("khusus group")
+          txt = getLeaveText(from)
+          reply(txt)
           break;
         
         default:
